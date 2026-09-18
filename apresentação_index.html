@@ -1,0 +1,705 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Crescer sem perder o sentido — Projeto CRIA</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700&family=Sora:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#F3F5FC; --surface:#FFFFFF; --surface2:#F8F9FE; --ink:#151A3D; --muted:#4F557C; --line:#D3D8EE;
+  --blue:#3352D0; --violet:#6740D8; --hi:#ECEFFF; --glow:rgba(103,64,216,.30);
+  --grad:linear-gradient(135deg,#3352D0 0%,#6F45E6 100%);
+  --shadow:0 1px 2px rgba(21,26,61,.06),0 14px 30px -14px rgba(51,82,208,.30);
+  --dot:#6F45E6; --blob1:rgba(51,82,208,.13); --blob2:rgba(111,69,230,.12);
+  color-scheme:light;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#121640; --surface:#1B2158; --surface2:#171C4E; --ink:#F3F4FF; --muted:#B4B9E4; --line:#333A7E;
+    --blue:#8AA3FF; --violet:#B39BFF; --hi:#252C72; --glow:rgba(150,120,255,.45);
+    --grad:linear-gradient(135deg,#4A6BF0 0%,#8557F0 100%);
+    --shadow:0 1px 2px rgba(0,0,0,.25),0 16px 34px -16px rgba(0,0,0,.6);
+    --dot:#B9A6FF; --blob1:rgba(74,107,240,.30); --blob2:rgba(133,87,240,.26);
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#121640; --surface:#1B2158; --surface2:#171C4E; --ink:#F3F4FF; --muted:#B4B9E4; --line:#333A7E;
+  --blue:#8AA3FF; --violet:#B39BFF; --hi:#252C72; --glow:rgba(150,120,255,.45);
+  --grad:linear-gradient(135deg,#4A6BF0 0%,#8557F0 100%);
+  --shadow:0 1px 2px rgba(0,0,0,.25),0 16px 34px -16px rgba(0,0,0,.6);
+  --dot:#B9A6FF; --blob1:rgba(74,107,240,.30); --blob2:rgba(133,87,240,.26);
+  color-scheme:dark;
+}
+
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;background:var(--bg);overflow:hidden}
+body{font-family:'Figtree',system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;color:var(--ink);-webkit-font-smoothing:antialiased}
+button{font-family:inherit}
+button:focus-visible{outline:3px solid var(--violet);outline-offset:3px}
+
+/* ---------- Palco 1600x900 escalado ---------- */
+#stage{
+  position:absolute;left:50%;top:50%;width:1600px;height:900px;margin:-450px 0 0 -800px;
+  transform:scale(var(--s,1));transform-origin:center center;overflow:hidden;
+  background:
+    radial-gradient(640px 420px at 96% -6%, var(--blob1), transparent 70%),
+    radial-gradient(760px 520px at -6% 106%, var(--blob2), transparent 70%),
+    var(--bg);
+}
+.lights span{position:absolute;border-radius:50%;background:var(--dot);opacity:.55;box-shadow:0 0 12px 3px var(--glow)}
+
+/* ---------- Progresso por seção ---------- */
+.top{position:absolute;left:64px;right:64px;top:0;height:76px;display:flex;gap:12px;align-items:flex-end;padding-bottom:10px;z-index:5}
+.seg{flex:1;background:none;border:0;text-align:left;cursor:pointer;color:var(--muted);font:600 16px/1.2 'Figtree',sans-serif;white-space:nowrap}
+.seg .bar{display:block;height:6px;border-radius:3px;background:var(--line);margin-bottom:9px}
+.seg .n{font-family:'Sora',sans-serif;font-weight:700;margin-right:8px;color:var(--blue)}
+.seg.done .bar{background:var(--grad);opacity:.5}
+.seg.cur .bar{background:var(--grad);box-shadow:0 0 12px var(--glow)}
+.seg.cur{color:var(--ink)}
+
+/* ---------- Rodapé / controles ---------- */
+.foot{position:absolute;left:64px;right:64px;bottom:0;height:64px;display:flex;align-items:center;justify-content:space-between;color:var(--muted);font-size:16px;z-index:5}
+.foot .ttl{flex:1;white-space:nowrap}
+.dots{display:flex;gap:7px;align-items:center;justify-content:center;flex:1}
+.dots button{width:10px;height:10px;border-radius:5px;border:0;background:var(--line);cursor:pointer;padding:0}
+.dots button.past{background:var(--blue);opacity:.5}
+.dots button.cur{width:30px;background:var(--grad);opacity:1}
+.ctrl{display:flex;gap:10px;align-items:center;justify-content:flex-end;flex:1}
+.btn{height:42px;min-width:42px;padding:0 16px;border-radius:10px;border:1px solid var(--line);background:var(--surface);color:var(--ink);font:600 16px 'Figtree',sans-serif;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:8px}
+.btn.primary{background:var(--grad);color:#fff;border-color:transparent}
+.btn:disabled{opacity:.4;cursor:default}
+.count{font:600 16px 'Sora',sans-serif;color:var(--ink);min-width:70px;text-align:center}
+
+/* ---------- Slides ---------- */
+.slide{position:absolute;left:0;right:0;top:76px;bottom:64px;padding:6px 64px 0;opacity:0;visibility:hidden;transition:opacity .25s ease}
+.slide.active{opacity:1;visibility:visible}
+@media (prefers-reduced-motion:reduce){.slide{transition:none}}
+
+.sh{display:flex;align-items:center;gap:24px;height:56px;margin-bottom:22px}
+.qtag{display:inline-flex;align-items:center;height:42px;padding:0 20px;border-radius:999px;background:var(--grad);color:#fff;font:700 16px 'Sora',sans-serif;letter-spacing:.05em;text-transform:uppercase;box-shadow:0 8px 20px -10px var(--glow);white-space:nowrap}
+.sh h2{font:700 40px/1.1 'Sora',sans-serif;letter-spacing:-.01em}
+.part{margin-left:auto;color:var(--muted);font-weight:600;font-size:17px;white-space:nowrap}
+
+.lab{font:700 15px 'Figtree',sans-serif;color:var(--violet);margin-bottom:8px;letter-spacing:.02em}
+.lab.blue{color:var(--blue)}
+.q{border-left:5px solid var(--violet);padding:2px 0 2px 22px}
+.q p{font:600 26px/1.3 'Sora',sans-serif}
+.a{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:20px 26px 22px;box-shadow:var(--shadow)}
+.a p{font:500 22px/1.5 'Figtree',sans-serif}
+
+.cols{display:grid;grid-template-columns:540px 1fr;gap:48px;height:calc(100% - 78px);align-items:start}
+.left{display:flex;flex-direction:column;gap:20px}
+.right{position:relative;height:100%}
+
+/* nós e conectores */
+.node{background:var(--surface);border:1.5px solid var(--line);border-radius:14px;padding:13px 18px;text-align:center;box-shadow:var(--shadow);font:700 21px/1.25 'Figtree',sans-serif}
+.node strong{display:block;font:600 21px/1.25 'Sora',sans-serif}
+.node small{display:block;margin-top:5px;font:500 17px/1.35 'Figtree',sans-serif;color:var(--muted)}
+.node.key{background:var(--grad);border-color:transparent;color:#fff}
+.node.key small{color:rgba(255,255,255,.88)}
+.node.dash{background:transparent;border:2px dashed var(--muted);box-shadow:none;color:var(--muted)}
+.node.dash small{color:var(--muted)}
+.chip{display:inline-flex;align-items:center;padding:7px 15px;border-radius:999px;background:var(--hi);color:var(--ink);border:1px solid var(--line);font:600 17px/1.2 'Figtree',sans-serif}
+.chips{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-top:10px}
+.dn,.ud{display:flex;justify-content:center;color:var(--violet);height:30px;align-items:center}
+.dn svg,.ud svg{display:block}
+.rt{display:flex;align-items:center;justify-content:center;width:36px;flex:none;color:var(--violet)}
+.rt svg{transform:rotate(-90deg)}
+.vflow{display:flex;flex-direction:column;align-items:stretch}
+.hflow{display:flex;align-items:stretch}
+.hflow > .node{flex:1;display:flex;flex-direction:column;justify-content:center}
+.group{border:2px dashed var(--line);border-radius:18px;padding:12px 14px 14px;background:color-mix(in srgb,var(--surface) 55%,transparent)}
+.group > .gl{font:700 15px 'Figtree',sans-serif;color:var(--violet);text-align:center;margin-bottom:8px}
+.group .row{display:flex;gap:12px}
+.group .row .node{flex:1;display:flex;flex-direction:column;justify-content:center}
+.step{display:flex;gap:14px;align-items:stretch}
+.step .no{flex:none;width:40px;height:40px;border-radius:50%;background:var(--grad);color:#fff;font:700 18px 'Sora',sans-serif;display:flex;align-items:center;justify-content:center;margin-top:12px;box-shadow:0 0 14px var(--glow)}
+.step .node{flex:1}
+.stepgap{margin-left:54px}
+.roomy .node{padding:22px 22px}
+.roomy .node strong{font-size:23px}
+.roomy .node small{font-size:19px}
+.roomy .dn{height:44px}
+.roomy .callout{font-size:22px}
+
+/* ---------- Abertura ---------- */
+.open{display:grid;grid-template-columns:720px 1fr;gap:40px;height:100%;align-items:center}
+.idchip{display:inline-flex;height:40px;align-items:center;padding:0 18px;border-radius:999px;border:1.5px solid var(--violet);color:var(--violet);font:700 17px 'Figtree',sans-serif}
+.open h1{font:700 82px/1.04 'Sora',sans-serif;letter-spacing:-.02em;margin:24px 0 20px}
+.open .sub{font:500 30px/1.3 'Sora',sans-serif;color:var(--muted);max-width:640px}
+.open .dil{margin-top:34px;padding:20px 24px;border-radius:16px;background:var(--surface);border:1px solid var(--line);box-shadow:var(--shadow);max-width:640px}
+.open .dil p{font:500 20px/1.45 'Figtree',sans-serif;color:var(--muted)}
+.open .dil p + p{margin-top:12px}
+.open .dil b{font:700 24px/1.3 'Sora',sans-serif;color:var(--ink);display:block;margin-bottom:2px}
+.open svg.art{width:100%;height:auto;max-height:640px}
+.open svg text{font-family:'Sora',sans-serif}
+
+/* ---------- Missão ---------- */
+.mission{display:grid;grid-template-columns:1fr 440px;gap:56px;align-items:center}
+.mission .stmt{font:600 44px/1.3 'Sora',sans-serif;letter-spacing:-.005em}
+.eq{display:flex;flex-direction:column;align-items:stretch}
+.eq .node{padding:22px 18px}
+.eq .ud{height:48px}
+.eq .node strong{font-size:26px}
+.road{margin-top:26px;padding-top:20px;border-top:1px solid var(--line)}
+.road .lab{margin-bottom:12px}
+.road .rowr{display:flex;align-items:stretch}
+.road .pill{flex:1;background:var(--surface);border:1.5px solid var(--line);border-radius:12px;padding:10px 12px;font:600 17px/1.25 'Figtree',sans-serif;text-align:center;display:flex;flex-direction:column;justify-content:center}
+.road .pill small{display:block;font:500 15px/1.3 'Figtree',sans-serif;color:var(--muted);margin-top:2px}
+.road .pill.key{background:var(--grad);color:#fff;border-color:transparent}
+.road .pill.key small{color:rgba(255,255,255,.88)}
+.road .rt{width:28px}
+
+/* ---------- Hub (aba fechada 1) ---------- */
+.hub{position:relative;width:884px;height:640px}
+.hub svg{position:absolute;inset:0;width:884px;height:640px}
+.hub .node{position:absolute;width:270px;transform:translate(-50%,-50%)}
+.core{position:absolute;left:442px;top:320px;width:210px;height:210px;margin:-105px 0 0 -105px;border-radius:50%;background:var(--grad);color:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:0 14px;box-shadow:0 0 0 14px color-mix(in srgb,var(--violet) 14%,transparent),0 0 44px var(--glow)}
+.core b{font:700 26px/1.15 'Sora',sans-serif}
+.core span{font:500 17px/1.3 'Figtree',sans-serif;margin-top:6px;opacity:.92}
+
+/* ---------- Aba fechada 2 ---------- */
+.hero{background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:22px 32px 26px;box-shadow:var(--shadow);margin-top:20px;position:relative;overflow:hidden}
+.hero::before{content:"";position:absolute;left:0;top:0;bottom:0;width:8px;background:var(--grad)}
+.hero .big{font:600 36px/1.3 'Sora',sans-serif;letter-spacing:-.005em}
+.hero .big2{font:700 40px/1.2 'Sora',sans-serif;margin-top:16px;padding-top:16px;border-top:1px solid var(--line);color:var(--blue)}
+.core-flow{margin-top:44px}
+.core-flow .node{padding:30px 22px}
+.core-flow .node strong{font-size:27px}
+.core-flow .node small{font-size:19px}
+.core-flow .rt{width:48px}
+
+/* ---------- Transição ---------- */
+.trans{height:calc(100% - 78px);display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:18px}
+.trans .t1{font:600 44px/1.25 'Sora',sans-serif;color:var(--muted)}
+.trans .t2{font:700 56px/1.2 'Sora',sans-serif;max-width:1180px;letter-spacing:-.01em}
+.trans .pair{display:flex;align-items:center;gap:20px;margin-top:20px}
+.trans .pair .node{min-width:340px}
+
+/* ---------- Aba aberta 1 ---------- */
+.adapt{display:grid;grid-template-columns:230px 36px 220px 36px 1fr;align-items:center;height:100%}
+.adapt .stack{display:flex;flex-direction:column;gap:14px}
+
+/* ---------- Exemplo etário ---------- */
+.example{display:flex;flex-direction:column;align-items:center;margin-top:22px}
+.example .pillar{width:640px;padding:22px 24px}
+.example .pillar strong{font-size:30px}
+.example .pillar small{font-size:20px}
+.example svg{display:block}
+.example .terr{display:flex;gap:40px;width:100%}
+.example .terr .node{flex:1;padding:30px 30px;text-align:left}
+.example .terr .node strong{font-size:30px;margin-bottom:10px}
+.example .terr .node .age{font:500 30px/1.4 'Figtree',sans-serif;color:var(--ink)}
+.example .terr .node .age i{font-style:normal;font-weight:700;color:var(--blue)}
+.legend{display:flex;gap:40px;margin-top:30px;font:600 20px 'Figtree',sans-serif;color:var(--muted)}
+.legend span::before{content:"";display:inline-block;width:14px;height:14px;border-radius:4px;margin-right:9px;vertical-align:-2px;background:var(--grad)}
+.legend span.b::before{background:transparent;border:2px solid var(--blue)}
+
+/* ---------- Síntese ---------- */
+.synwrap{height:calc(100% - 78px);display:flex;flex-direction:column;justify-content:center;padding-bottom:20px}
+.syn{display:grid;grid-template-columns:1fr 1fr;gap:40px}
+.syn .card{background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:34px 36px;box-shadow:var(--shadow)}
+.syn .card h3{font:700 38px/1.15 'Sora',sans-serif;margin-bottom:14px}
+.syn .card p{font:500 25px/1.5 'Figtree',sans-serif;color:var(--muted)}
+.syn .card .lab{margin-bottom:6px}
+.syn2{display:grid;grid-template-columns:1fr 1fr;gap:40px}
+.result{border-radius:20px;background:var(--grad);color:#fff;padding:44px 40px;text-align:center;box-shadow:0 0 44px var(--glow)}
+.result .lab{color:rgba(255,255,255,.85)}
+.result p{font:700 48px/1.25 'Sora',sans-serif;letter-spacing:-.01em}
+
+/* ---------- Intro 1.2 ---------- */
+.enq{display:grid;grid-template-columns:repeat(3,1fr);gap:36px;margin-top:56px;position:relative}
+.enq .c{background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:34px 30px 38px;box-shadow:var(--shadow);position:relative}
+.enq .c .no{width:56px;height:56px;border-radius:50%;background:var(--grad);color:#fff;font:700 22px 'Sora',sans-serif;display:flex;align-items:center;justify-content:center;margin-bottom:16px;box-shadow:0 0 16px var(--glow)}
+.enq .c h3{font:700 29px/1.2 'Sora',sans-serif;margin-bottom:14px}
+.enq .c p{font:500 22px/1.45 'Figtree',sans-serif;color:var(--muted)}
+.enq .c:not(:last-child)::after{content:"";position:absolute;right:-36px;top:62px;width:36px;height:3px;background:var(--grad)}
+
+/* ---------- Sucessão ---------- */
+.two{display:grid;grid-template-columns:1fr 1fr;gap:36px;align-items:start}
+.two .left{gap:0}
+.succ{margin-top:40px}
+.succ .brk{display:grid;grid-template-columns:repeat(6,minmax(0,1fr) 30px) minmax(0,1fr);margin-bottom:12px;font:600 17px 'Figtree',sans-serif}
+.succ .brk .b1{grid-column:3 / span 9;border-top:3px solid var(--violet);text-align:center;padding-top:6px;color:var(--violet);position:relative}
+.succ .brk .b2{grid-column:13;border-top:3px solid var(--blue);text-align:center;padding-top:6px;color:var(--blue)}
+.succ .brk .b0{grid-column:1;border-top:3px solid var(--line);text-align:center;padding-top:6px;color:var(--muted)}
+.succ .rowh{display:grid;grid-template-columns:repeat(6,minmax(0,1fr) 30px) minmax(0,1fr);align-items:stretch}
+.succ .rowh .rt{width:30px}
+.sn{background:var(--surface);border:1.5px solid var(--line);border-radius:14px;padding:22px 8px 24px;text-align:center;box-shadow:var(--shadow);display:flex;flex-direction:column;align-items:center}
+.sn .no{width:36px;height:36px;border-radius:50%;background:var(--grad);color:#fff;font:700 17px 'Sora',sans-serif;display:flex;align-items:center;justify-content:center;margin-bottom:10px}
+.sn strong{font:600 18px/1.25 'Sora',sans-serif;display:block;overflow-wrap:break-word;hyphens:auto}
+.sn small{display:block;margin-top:10px;font:500 17px/1.35 'Figtree',sans-serif;color:var(--muted)}
+.sn.key{background:var(--grad);border-color:transparent;color:#fff;box-shadow:0 0 30px var(--glow)}
+.sn.key .no{background:#fff;color:var(--violet)}
+.sn.key small{color:rgba(255,255,255,.9)}
+
+/* ---------- Espaço físico ---------- */
+.sides{display:grid;grid-template-columns:380px 1fr;gap:44px}
+.sides .hd{font:700 17px 'Figtree',sans-serif;color:var(--violet);margin-bottom:12px;text-align:center}
+.sides .col.zero .hd{color:var(--muted)}
+.callout{margin-top:34px;padding:16px 22px;border-radius:14px;background:var(--hi);border:1px solid var(--line);font:600 20px/1.4 'Figtree',sans-serif;text-align:center}
+
+/* ---------- Conclusão ---------- */
+.concl{display:flex;align-items:stretch;margin-top:4px}
+.concl .rt{width:44px}
+.ccard{flex:1;background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:30px 26px 28px;box-shadow:var(--shadow);display:flex;flex-direction:column}
+.ccard .no{width:44px;height:44px;border-radius:50%;background:var(--grad);color:#fff;font:700 20px 'Sora',sans-serif;display:flex;align-items:center;justify-content:center;margin-bottom:14px;box-shadow:0 0 16px var(--glow)}
+.ccard h3{font:700 26px/1.2 'Sora',sans-serif;margin-bottom:14px}
+.ccard p{font:500 22px/1.5 'Figtree',sans-serif;color:var(--muted);flex:1}
+.ccard .from{margin-top:16px}
+.concl-res{margin-top:4px}
+
+/* ---------- Frase final ---------- */
+.final{height:calc(100% - 10px);display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;position:relative}
+.final::before{content:"";position:absolute;width:900px;height:520px;background:radial-gradient(closest-side,var(--glow),transparent);opacity:.55;z-index:0}
+.final blockquote{position:relative;z-index:1;font:600 50px/1.28 'Sora',sans-serif;letter-spacing:-.012em;max-width:1360px}
+.final .rule{position:relative;z-index:1;width:160px;height:5px;border-radius:3px;background:var(--grad);margin:40px 0 24px}
+.final .sig{position:relative;z-index:1;font:500 24px/1.4 'Sora',sans-serif;color:var(--muted)}
+.final .sig b{color:var(--ink)}
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+  <linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" style="stop-color:var(--blue)"/><stop offset="1" style="stop-color:var(--violet)"/></linearGradient>
+</defs></svg>
+
+<div id="stage">
+  <div class="lights" aria-hidden="true">
+    <span style="left:1130px;top:120px;width:5px;height:5px"></span>
+    <span style="left:1490px;top:210px;width:4px;height:4px;opacity:.4"></span>
+    <span style="left:1290px;top:760px;width:6px;height:6px"></span>
+    <span style="left:60px;top:840px;width:4px;height:4px;opacity:.4"></span>
+    <span style="left:210px;top:690px;width:5px;height:5px"></span>
+    <span style="left:840px;top:830px;width:3px;height:3px;opacity:.4"></span>
+    <span style="left:1548px;top:470px;width:4px;height:4px"></span>
+    <span style="left:38px;top:300px;width:3px;height:3px;opacity:.4"></span>
+  </div>
+
+  <nav class="top" id="secbar" aria-label="Progresso por seção"></nav>
+
+  <!-- 1. ABERTURA -->
+  <section class="slide" data-sec="1" data-title="Abertura" aria-label="Abertura">
+    <div class="open">
+      <div>
+        <span class="idchip">Estudo de Caso FGV</span>
+        <h1>Crescer sem perder o sentido</h1>
+        <p class="sub">Os desafios na expansão de uma tecnologia social — Projeto CRIA</p>
+        <div class="dil">
+          <p>O grande dilema</p>
+          <b>Escala × Enraizamento local</b>
+          <p>Nossa proposta: <strong>solução de consenso / terceira via</strong>. Vamos acompanhar o raciocínio na ordem das perguntas da atividade.</p>
+        </div>
+      </div>
+      <svg class="art" viewBox="0 0 720 620" role="img" aria-label="Dilema entre escala e enraizamento local, com a terceira via ao centro embaixo">
+        <g style="filter:drop-shadow(0 0 16px var(--glow))">
+          <circle cx="170" cy="190" r="126" fill="var(--surface)" stroke="url(#g)" stroke-width="4"/>
+          <circle cx="550" cy="190" r="126" fill="var(--surface)" stroke="url(#g)" stroke-width="4"/>
+        </g>
+        <text x="170" y="202" text-anchor="middle" font-size="36" font-weight="700" fill="var(--ink)">Escala</text>
+        <text x="550" y="182" text-anchor="middle" font-size="31" font-weight="700" fill="var(--ink)">Enraizamento</text>
+        <text x="550" y="224" text-anchor="middle" font-size="31" font-weight="700" fill="var(--ink)">local</text>
+        <text x="360" y="212" text-anchor="middle" font-size="64" font-weight="600" fill="var(--violet)">×</text>
+        <path d="M170 316 C170 410 250 410 262 430" fill="none" stroke="var(--violet)" stroke-width="3.5" stroke-dasharray="3 10" stroke-linecap="round"/>
+        <path d="M550 316 C550 410 470 410 458 430" fill="none" stroke="var(--violet)" stroke-width="3.5" stroke-dasharray="3 10" stroke-linecap="round"/>
+        <g style="filter:drop-shadow(0 0 20px var(--glow))">
+          <rect x="140" y="430" width="440" height="130" rx="24" fill="url(#g)"/>
+        </g>
+        <text x="360" y="486" text-anchor="middle" font-size="30" font-weight="700" fill="#fff">Solução de consenso</text>
+        <text x="360" y="530" text-anchor="middle" font-size="30" font-weight="500" fill="#fff">Terceira via</text>
+      </svg>
+    </div>
+  </section>
+
+  <!-- 2. MISSÃO -->
+  <section class="slide" data-sec="1" data-title="Missão da equipe" aria-label="Missão da equipe">
+    <header class="sh"><span class="qtag">Missão da equipe</span><h2>A pergunta central da atividade</h2></header>
+    <div class="mission" style="height:calc(100% - 78px - 168px)">
+      <div>
+        <div class="lab">Pergunta central</div>
+        <p class="stmt">Construir uma solução de equilíbrio (uma “terceira via”) para a expansão do CRIA, conciliando escala e enraizamento local.</p>
+      </div>
+      <div class="eq">
+        <div class="node"><strong>Escala</strong></div>
+        <i class="ud"></i>
+        <div class="node key"><strong>Equilíbrio</strong><small>terceira via</small></div>
+        <i class="ud"></i>
+        <div class="node"><strong>Enraizamento local</strong></div>
+      </div>
+    </div>
+    <div class="road">
+      <div class="lab">O caminho da nossa resposta</div>
+      <div class="rowr">
+        <div class="pill">Pergunta 1.1<small>Aba fechada</small></div><i class="rt"></i>
+        <div class="pill">Pergunta 1.1<small>Aba aberta</small></div><i class="rt"></i>
+        <div class="pill">Pergunta 1.2<small>Entrave 1 · Logística</small></div><i class="rt"></i>
+        <div class="pill">Pergunta 1.2<small>Entrave 2 · Sustentabilidade</small></div><i class="rt"></i>
+        <div class="pill">Pergunta 1.2<small>Entrave 3 · Espaço físico</small></div><i class="rt"></i>
+        <div class="pill key">Nossa terceira via<small>Conclusão</small></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 3. ABA FECHADA — 1 -->
+  <section class="slide" data-sec="2" data-title="Aba fechada — aspectos inegociáveis" aria-label="Pergunta 1.1 aba fechada">
+    <header class="sh"><span class="qtag">Pergunta 1.1 — Aba fechada</span><h2>A Essência Inviolável</h2><span class="part">Questão 1 de 2</span></header>
+    <div class="cols">
+      <div class="left">
+        <div class="q"><div class="lab">Pergunta</div><p>Quais aspectos metodológicos são inegociáveis?</p></div>
+        <div class="a"><div class="lab blue">Nossa resposta</div><p>A construção genuína de vínculo, os jovens como formadores pensantes de conhecimento, autonomia, cultura, espaço aberto de diálogo, os jovens como foco para se tornarem capazes de atuar como referências locais de cuidado.</p></div>
+      </div>
+      <div class="right">
+        <div class="hub">
+          <svg viewBox="0 0 884 640" aria-hidden="true">
+            <g stroke="var(--blue)" stroke-width="3" opacity=".55" stroke-linecap="round">
+              <path d="M442 320 L145 85"/><path d="M442 320 L739 85"/>
+              <path d="M442 320 L135 320"/><path d="M442 320 L749 320"/>
+              <path d="M442 320 L145 555"/><path d="M442 320 L739 555"/>
+            </g>
+          </svg>
+          <div class="node" style="left:145px;top:85px">A construção genuína de vínculo</div>
+          <div class="node" style="left:739px;top:85px">Os jovens como formadores pensantes de conhecimento</div>
+          <div class="node" style="left:749px;top:320px">Autonomia</div>
+          <div class="node" style="left:739px;top:555px">Cultura</div>
+          <div class="node" style="left:145px;top:555px">Espaço aberto de diálogo</div>
+          <div class="node" style="left:135px;top:320px">Os jovens como foco para se tornarem capazes de atuar como referências locais de cuidado</div>
+          <div class="core"><b>Essência inviolável</b><span>não se negocia</span></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 4. ABA FECHADA — 2 -->
+  <section class="slide" data-sec="2" data-title="Aba fechada — o que não pode ser modificado" aria-label="Pergunta 1.1 aba fechada, segunda questão">
+    <header class="sh"><span class="qtag">Pergunta 1.1 — Aba fechada</span><h2>A Essência Inviolável</h2><span class="part">Questão 2 de 2</span></header>
+    <div class="q"><div class="lab">Pergunta</div><p>O que não pode ser modificado sem descaracterizar o projeto?</p></div>
+    <div class="hero">
+      <div class="lab blue">Nossa resposta</div>
+      <p class="big">Os jovens como fonte de construção de conhecimento coletivo, pois o foco são os jovens.</p>
+      <p class="big2">Sem isso, o projeto deixa de ser o CRIA.</p>
+    </div>
+    <div class="hflow core-flow">
+      <div class="node"><strong>Jovens</strong><small>o foco são os jovens</small></div><i class="rt"></i>
+      <div class="node"><strong>Construção de conhecimento coletivo</strong><small>os jovens como fonte</small></div><i class="rt"></i>
+      <div class="node key"><strong>Essência do CRIA</strong><small>sem isso, deixa de ser o CRIA</small></div>
+    </div>
+  </section>
+
+  <!-- 5. TRANSIÇÃO -->
+  <section class="slide" data-sec="2" data-title="Transição para a Aba aberta" aria-label="Transição">
+    <header class="sh"><span class="qtag">Transição — da Aba fechada para a Aba aberta</span></header>
+    <div class="trans">
+      <p class="t1">Se alguns elementos são inegociáveis…</p>
+      <i class="dn" style="height:44px"></i>
+      <p class="t2">o que pode ser adaptado quando o CRIA chega a um novo território?</p>
+      <div class="pair">
+        <div class="node"><strong>Aba fechada</strong><small>o que não muda</small></div><i class="rt"></i>
+        <div class="node key"><strong>Aba aberta</strong><small>o que pode ser adaptado</small></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 6. ABA ABERTA — 1 -->
+  <section class="slide" data-sec="3" data-title="Aba aberta — o que deve ser adaptado" aria-label="Pergunta 1.1 aba aberta">
+    <header class="sh"><span class="qtag">Pergunta 1.1 — Aba aberta</span><h2>A Flexibilidade Territorial</h2><span class="part">Questão 1 de 2</span></header>
+    <div class="cols">
+      <div class="left">
+        <div class="q"><div class="lab">Pergunta</div><p>O que deve ser adaptado à realidade, às necessidades e à cultura de cada comunidade?</p></div>
+        <div class="a"><div class="lab blue">Nossa resposta</div><p>O foco de trabalho deve ser adaptado conforme as necessidades das comunidades, intervenções e formas de difusão de conhecimento, pesquisas de campo se tornam necessárias.</p></div>
+      </div>
+      <div class="right">
+        <div class="vflow roomy">
+          <div class="node"><strong>Cada comunidade</strong><small>realidade, necessidades e cultura</small></div>
+          <i class="dn"></i>
+          <div class="node dash" style="border-color:var(--violet);color:var(--ink)"><strong>Pesquisas de campo</strong><small>se tornam necessárias</small></div>
+          <i class="dn"></i>
+          <div class="group" style="border-color:var(--violet)"><div class="gl">O que é adaptado</div>
+            <div class="row">
+              <div class="node key"><strong>Foco de trabalho</strong><small>conforme as necessidades das comunidades</small></div>
+              <div class="node key"><strong>Intervenções</strong></div>
+              <div class="node key"><strong>Formas de difusão de conhecimento</strong></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 7. ABA ABERTA — 2 -->
+  <section class="slide" data-sec="3" data-title="Aba aberta — flexibilidade sem cartilha engessada" aria-label="Pergunta 1.1 aba aberta, segunda questão">
+    <header class="sh"><span class="qtag">Pergunta 1.1 — Aba aberta</span><h2>A Flexibilidade Territorial</h2><span class="part">Questão 2 de 2</span></header>
+    <div class="cols">
+      <div class="left">
+        <div class="q"><div class="lab">Pergunta</div><p>Como garantir flexibilidade sem transformar o CRIA em uma “cartilha engessada”?</p></div>
+        <div class="a"><div class="lab blue">Nossa resposta</div><p>Devem-se mapear atributos específicos de valor, culturais e de base de conhecimento. A partir disso, com o know-how da CRIA-1, desenvolver pontos basilares e pilares fundamentais invioláveis. Por exemplo: Jovens no centro. Porém, jovens de idade “x” a idade “y” para território A e jovens de idade “c” à idade “e” no território B.</p></div>
+      </div>
+      <div class="right">
+        <div class="vflow roomy">
+          <div class="step"><span class="no">1</span>
+            <div class="node"><strong>Mapear o território</strong>
+              <div class="chips"><span class="chip">Atributos de valor</span><span class="chip">Cultura</span><span class="chip">Base de conhecimento</span></div>
+            </div>
+          </div>
+          <i class="dn stepgap"></i>
+          <div class="step"><span class="no">2</span><div class="node"><strong>Usar o know-how da CRIA-1</strong></div></div>
+          <i class="dn stepgap"></i>
+          <div class="step"><span class="no">3</span><div class="node key"><strong>Definir pontos basilares e pilares fundamentais invioláveis</strong><small>Por exemplo: Jovens no centro</small></div></div>
+          <i class="dn stepgap"></i>
+          <div class="step"><span class="no">4</span><div class="node"><strong>Adaptar a aplicação</strong><small>a cada território</small></div></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 8. ABA ABERTA — exemplo -->
+  <section class="slide" data-sec="3" data-title="Aba aberta — o exemplo dos grupos etários" aria-label="Exemplo dos grupos etários">
+    <header class="sh"><span class="qtag">Pergunta 1.1 — Aba aberta</span><h2>A Flexibilidade Territorial</h2><span class="part">Questão 2 de 2 · o exemplo</span></header>
+    <div class="a"><div class="lab blue">Nossa resposta — o exemplo</div><p style="font-size:26px">Por exemplo: Jovens no centro. Porém, jovens de idade “x” a idade “y” para território A e jovens de idade “c” à idade “e” no território B.</p></div>
+    <div class="example">
+      <div class="node key pillar"><strong>Jovens no centro</strong><small>pilar fundamental inviolável</small></div>
+      <svg width="1472" height="90" viewBox="0 0 1472 90" aria-hidden="true">
+        <g fill="none" stroke="var(--violet)" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M736 4 V30 Q736 46 716 46 H378 Q358 46 358 62 V82 M346 70 l12 12 12 -12"/>
+          <path d="M736 30 Q736 46 756 46 H1094 Q1114 46 1114 62 V82 M1102 70 l12 12 12 -12"/>
+        </g>
+      </svg>
+      <div class="terr">
+        <div class="node"><strong>Território A</strong><p class="age">Jovens de idade <i>“x”</i> a idade <i>“y”</i></p></div>
+        <div class="node"><strong>Território B</strong><p class="age">Jovens de idade <i>“c”</i> à idade <i>“e”</i></p></div>
+      </div>
+      <div class="legend"><span>O pilar permanece em todo território</span><span class="b">A aplicação se adapta a cada território</span></div>
+    </div>
+  </section>
+
+  <!-- 9. SÍNTESE DAS ABAS -->
+  <section class="slide" data-sec="3" data-title="Síntese das abas" aria-label="Síntese das abas">
+    <header class="sh"><span class="qtag">Síntese das abas</span><h2>O que não muda e o que pode mudar</h2></header>
+    <div class="synwrap">
+    <div class="syn">
+      <div class="card"><div class="lab">Aba fechada</div><h3>O que não muda</h3><p>Os jovens como fonte de construção de conhecimento coletivo: sem isso, o projeto deixa de ser o CRIA.</p></div>
+      <div class="card"><div class="lab blue">Aba aberta</div><h3>O que pode mudar</h3><p>O foco de trabalho, as intervenções e as formas de difusão de conhecimento, conforme as necessidades de cada comunidade.</p></div>
+    </div>
+    <div class="syn2"><i class="dn" style="height:64px"></i><i class="dn" style="height:64px"></i></div>
+    <div class="result"><div class="lab">Resultado</div><p>A essência permanece; a aplicação se adapta ao território.</p></div>
+    </div>
+  </section>
+
+  <!-- 10. INTRODUÇÃO 1.2 -->
+  <section class="slide" data-sec="4" data-title="Pergunta 1.2 — entraves práticos" aria-label="Pergunta 1.2 entraves práticos">
+    <header class="sh"><span class="qtag">Pergunta 1.2 — Entraves práticos</span><h2>Os três entraves</h2></header>
+    <div class="q" style="max-width:1300px"><div class="lab">Pergunta</div><p style="font-size:34px">Agora que definimos o que deve ser preservado e o que pode ser adaptado, como isso funciona na prática?</p></div>
+    <div class="enq">
+      <div class="c"><div class="no">1</div><h3>Logística dos jovens reaplicadores</h3><p>Distância, custos de transporte e escolas de tempo integral.</p></div>
+      <div class="c"><div class="no">2</div><h3>Sustentabilidade do território-piloto</h3><p>Enviar líderes veteranos para novos territórios sem enfraquecer o acompanhamento de Pedra Furada.</p></div>
+      <div class="c"><div class="no">3</div><h3>Espaço físico</h3><p>Expandir sem reproduzir o custo de uma sede própria, usando equipamentos públicos sem perder o caráter comunitário.</p></div>
+    </div>
+  </section>
+
+  <!-- 11. ENTRAVE 1 -->
+  <section class="slide" data-sec="4" data-title="Entrave 1 — logística dos jovens reaplicadores" aria-label="Entrave 1">
+    <header class="sh"><span class="qtag">Pergunta 1.2 — Entrave 1</span><h2>Logística dos jovens reaplicadores</h2></header>
+    <div class="cols">
+      <div class="left">
+        <div class="q"><div class="lab">Pergunta</div><p>Como viabilizar a atuação de jovens de Pedra Furada em outras cidades, considerando a distância, os custos de transporte e as escolas de tempo integral?</p></div>
+        <div class="a"><div class="lab blue">Nossa resposta</div><p>Com o apoio dos financiadores, deverá ser viabilizado um ambiente de apoio local (casa) e transportes. As empresas entram com o recurso, e o projeto busca empresas contratadas para operação. Em relação ao horário dos jovens, poderia ser viabilizado com as escolas momentos pontuais durante a semana e atividades constantes aos fins de semana.</p></div>
+      </div>
+      <div class="right">
+        <div class="vflow">
+          <div class="node"><strong>Financiadores</strong><small>as empresas entram com o recurso</small></div>
+          <i class="dn" style="height:24px"></i>
+          <div class="node" style="padding:9px 18px"><strong>Recursos</strong></div>
+          <i class="dn" style="height:24px"></i>
+          <div class="group"><div class="gl">Estrutura local + transporte</div>
+            <div class="row"><div class="node"><strong>Ambiente de apoio local</strong><small>casa</small></div><div class="node"><strong>Transportes</strong></div></div>
+          </div>
+          <i class="dn" style="height:24px"></i>
+          <div class="node"><strong>Operação</strong><small>o projeto busca empresas contratadas para operação</small></div>
+          <i class="dn" style="height:24px"></i>
+          <div class="group" style="border-color:var(--violet)"><div class="gl">Articulação com escolas</div>
+            <div class="row"><div class="node key"><strong>Momentos pontuais durante a semana</strong></div><div class="node key"><strong>Atividades constantes aos fins de semana</strong></div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 12. ENTRAVE 2 -->
+  <section class="slide" data-sec="5" data-title="Entrave 2 — sustentabilidade do território-piloto" aria-label="Entrave 2">
+    <header class="sh"><span class="qtag">Pergunta 1.2 — Entrave 2</span><h2>Sustentabilidade do território-piloto</h2></header>
+    <div class="two">
+      <div class="left"><div class="q"><div class="lab">Pergunta</div><p>Como enviar líderes veteranos para novos territórios sem enfraquecer o acompanhamento de Pedra Furada?</p></div></div>
+      <div class="a"><div class="lab blue">Nossa resposta</div><p>Em primeiro lugar, deve-se iniciar um processo de recrutamento de mais jovens em Pedra Furada com o acompanhamento dos veteranos e após essa ambientação será possível delegar aos jovens iniciantes que já estarão mais maduros para cumprimento de funções.</p></div>
+    </div>
+    <div class="succ">
+      <div class="brk"><span class="b1">Sem enfraquecer o acompanhamento de Pedra Furada</span><span class="b2">Expansão</span></div>
+      <div class="rowh">
+        <div class="sn"><span class="no">1</span><strong>Veteranos</strong><small>acompanham o processo</small></div><i class="rt"></i>
+        <div class="sn"><span class="no">2</span><strong>Recrutamento de novos jovens</strong><small>mais jovens em Pedra Furada, em primeiro lugar</small></div><i class="rt"></i>
+        <div class="sn"><span class="no">3</span><strong>Acompanhamento</strong><small>dos veteranos</small></div><i class="rt"></i>
+        <div class="sn"><span class="no">4</span><strong>Ambientação</strong><small>dos jovens iniciantes</small></div><i class="rt"></i>
+        <div class="sn"><span class="no">5</span><strong>Maturação</strong><small>jovens iniciantes mais maduros</small></div><i class="rt"></i>
+        <div class="sn"><span class="no">6</span><strong>Delegação de funções</strong><small>cumprimento de funções pelos iniciantes</small></div><i class="rt"></i>
+        <div class="sn key"><span class="no">7</span><strong>Veteranos disponíveis para expansão</strong><small>novos territórios</small></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 13. ENTRAVE 3 -->
+  <section class="slide" data-sec="6" data-title="Entrave 3 — espaço físico" aria-label="Entrave 3">
+    <header class="sh"><span class="qtag">Pergunta 1.2 — Entrave 3</span><h2>Espaço físico</h2></header>
+    <div class="cols">
+      <div class="left">
+        <div class="q"><div class="lab">Pergunta</div><p style="font-size:24px">Como expandir sem reproduzir o custo de uma sede própria? É possível utilizar equipamentos públicos existentes sem perder o caráter comunitário do CRIA?</p></div>
+        <div class="a"><div class="lab blue">Nossa resposta</div><p>Sim, é bem possível utilizar espaços públicos como associações, salões, até porque criar um espaço do zero é estabelecer um novo lugar que será difícil de ambientar e gerar confiança. Utilizar espaços já conhecidos torna a relação mais suscetível a confiança e credibilidade.</p></div>
+      </div>
+      <div class="right roomy">
+        <div class="sides">
+          <div class="col zero">
+            <div class="hd">Criar do zero</div>
+            <div class="vflow">
+              <div class="node dash"><strong>Criar um espaço do zero</strong><small>sede própria</small></div>
+              <i class="dn" style="color:var(--muted)"></i>
+              <div class="node dash"><strong>Um novo lugar</strong><small>difícil de ambientar e gerar confiança</small></div>
+            </div>
+          </div>
+          <div class="col">
+            <div class="hd">Usar o que já existe</div>
+            <div class="vflow">
+              <div class="node"><strong>Espaços já existentes</strong>
+                <div class="chips"><span class="chip">Associações</span><span class="chip">Salões</span><span class="chip">Equipamentos públicos</span></div>
+              </div>
+              <i class="dn"></i>
+              <div class="node"><strong>Espaços já conhecidos pela comunidade</strong></div>
+              <i class="dn"></i>
+              <div class="node key"><strong>Maior possibilidade de construir confiança e credibilidade</strong></div>
+            </div>
+          </div>
+        </div>
+        <div class="callout">O argumento vai além de reduzir custos: envolve ambientação, confiança e credibilidade.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 14. CONCLUSÃO -->
+  <section class="slide" data-sec="7" data-title="Conclusão — nossa terceira via" aria-label="Conclusão">
+    <header class="sh"><span class="qtag">Conclusão</span><h2>Nossa terceira via</h2></header>
+    <div class="concl">
+      <div class="ccard"><div class="no">1</div><h3>Preservar a essência</h3><p>Os jovens continuam no centro da construção do conhecimento coletivo.</p><div class="from"><span class="chip">Aba fechada</span></div></div><i class="rt"></i>
+      <div class="ccard"><div class="no">2</div><h3>Adaptar ao território</h3><p>Cada comunidade possui necessidades, cultura e características próprias.</p><div class="from"><span class="chip">Aba aberta</span></div></div><i class="rt"></i>
+      <div class="ccard"><div class="no">3</div><h3>Formar capacidade local</h3><p>A expansão não deve depender permanentemente dos mesmos jovens veteranos.</p><div class="from"><span class="chip">Entrave 2</span></div></div><i class="rt"></i>
+      <div class="ccard"><div class="no">4</div><h3>Criar estrutura de suporte</h3><p>Logística, transporte, apoio local, escolas e espaços comunitários precisam fazer parte da expansão.</p><div class="from"><span class="chip">Entraves 1 e 3</span></div></div>
+    </div>
+    <i class="dn" style="height:60px"></i>
+    <div class="result concl-res"><div class="lab">Resultado</div><p>Escalar sem transformar o CRIA em uma cartilha.</p></div>
+  </section>
+
+  <!-- 15. FRASE FINAL -->
+  <section class="slide" data-sec="7" data-title="Frase final" aria-label="Frase final">
+    <div class="final">
+      <blockquote>“A terceira via não está em escolher entre escala e enraizamento local, mas em preservar aquilo que faz o CRIA ser CRIA enquanto permitimos que cada território encontre sua própria forma de vivenciá-lo.”</blockquote>
+      <div class="rule"></div>
+      <p class="sig"><b>Crescer sem perder o sentido</b> — Projeto CRIA · Estudo de Caso FGV</p>
+    </div>
+  </section>
+
+  <footer class="foot">
+    <div class="ttl">Crescer sem perder o sentido — Projeto CRIA</div>
+    <div class="dots" id="dots" aria-label="Slides"></div>
+    <div class="ctrl">
+      <button class="btn" id="prev" aria-label="Slide anterior" title="Anterior (←)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg>Anterior</button>
+      <span class="count" id="count" aria-live="polite">01 / 15</span>
+      <button class="btn primary" id="next" aria-label="Próximo slide" title="Próximo (→)">Próximo<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5l7 7-7 7"/></svg></button>
+      <button class="btn" id="theme" aria-label="Alternar tema claro e escuro" title="Tema claro/escuro (T)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 3v18" /><path d="M12 3a9 9 0 0 1 0 18z" fill="currentColor"/></svg></button>
+      <button class="btn" id="full" aria-label="Tela cheia" title="Tela cheia (F)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg></button>
+    </div>
+  </footer>
+</div>
+
+<script>
+(function(){
+  var SECTIONS=[["01","Missão"],["02","Aba fechada"],["03","Aba aberta"],["04","Logística"],["05","Sustentabilidade"],["06","Espaço"],["07","Síntese"]];
+  var DOWN='<svg viewBox="0 0 24 34" width="22" height="30" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v26M4 21l8 9 8-9"/></svg>';
+  var UD='<svg viewBox="0 0 24 44" width="22" height="40" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v34M4 13l8-9 8 9M4 31l8 9 8-9"/></svg>';
+  document.querySelectorAll('.dn').forEach(function(e){e.innerHTML=DOWN;e.setAttribute('aria-hidden','true')});
+  document.querySelectorAll('.ud').forEach(function(e){e.innerHTML=UD;e.setAttribute('aria-hidden','true')});
+  document.querySelectorAll('.rt').forEach(function(e){e.innerHTML=DOWN;e.setAttribute('aria-hidden','true')});
+
+  var stage=document.getElementById('stage');
+  var slides=Array.prototype.slice.call(document.querySelectorAll('.slide'));
+  var secbar=document.getElementById('secbar'), dots=document.getElementById('dots');
+  var count=document.getElementById('count'), prev=document.getElementById('prev'), next=document.getElementById('next');
+  var cur=0;
+
+  var segs=SECTIONS.map(function(s,i){
+    var b=document.createElement('button');b.className='seg';
+    b.innerHTML='<span class="bar"></span><span class="n">'+s[0]+'</span>'+s[1];
+    b.setAttribute('aria-label','Ir para a seção '+s[0]+' — '+s[1]);
+    b.addEventListener('click',function(){jumpSection(i+1)});
+    secbar.appendChild(b);return b;
+  });
+  var dotEls=slides.map(function(s,i){
+    var b=document.createElement('button');
+    b.setAttribute('aria-label','Slide '+(i+1)+': '+s.dataset.title);b.title=s.dataset.title;
+    b.addEventListener('click',function(){go(i)});
+    dots.appendChild(b);return b;
+  });
+
+  function pad(n){return (n<10?'0':'')+n}
+  function go(i){
+    i=Math.max(0,Math.min(slides.length-1,i));cur=i;
+    var sec=parseInt(slides[i].dataset.sec,10);
+    slides.forEach(function(s,k){s.classList.toggle('active',k===i);s.setAttribute('aria-hidden',k===i?'false':'true')});
+    segs.forEach(function(b,k){b.classList.toggle('cur',k+1===sec);b.classList.toggle('done',k+1<sec);if(k+1===sec)b.setAttribute('aria-current','step');else b.removeAttribute('aria-current')});
+    dotEls.forEach(function(d,k){d.classList.toggle('cur',k===i);d.classList.toggle('past',k<i)});
+    count.textContent=pad(i+1)+' / '+pad(slides.length);
+    prev.disabled=i===0;next.disabled=i===slides.length-1;
+  }
+  function jumpSection(n){for(var k=0;k<slides.length;k++){if(parseInt(slides[k].dataset.sec,10)===n){go(k);return}}}
+
+  function fit(){var s=Math.min(window.innerWidth/1600,window.innerHeight/900);stage.style.setProperty('--s',s)}
+  window.addEventListener('resize',fit);fit();
+
+  prev.addEventListener('click',function(){go(cur-1)});
+  next.addEventListener('click',function(){go(cur+1)});
+
+  document.addEventListener('keydown',function(e){
+    if(e.ctrlKey||e.metaKey||e.altKey)return;
+    var k=e.key;
+    if(k==='ArrowRight'||k==='PageDown'||k===' '){e.preventDefault();go(cur+1)}
+    else if(k==='ArrowLeft'||k==='PageUp'){e.preventDefault();go(cur-1)}
+    else if(k==='Home'){e.preventDefault();go(0)}
+    else if(k==='End'){e.preventDefault();go(slides.length-1)}
+    else if(k==='f'||k==='F'){toggleFull()}
+    else if(k==='t'||k==='T'){toggleTheme()}
+    else if(/^[1-7]$/.test(k)){jumpSection(parseInt(k,10))}
+  });
+
+  var sx=null;
+  document.addEventListener('touchstart',function(e){sx=e.touches[0].clientX},{passive:true});
+  document.addEventListener('touchend',function(e){if(sx===null)return;var dx=e.changedTouches[0].clientX-sx;if(Math.abs(dx)>60){go(cur+(dx<0?1:-1))}sx=null},{passive:true});
+
+  function toggleFull(){
+    try{
+      if(document.fullscreenElement){document.exitFullscreen()}
+      else if(document.documentElement.requestFullscreen){document.documentElement.requestFullscreen().catch(function(){})}
+    }catch(err){}
+  }
+  var fullBtn=document.getElementById('full');
+  fullBtn.addEventListener('click',toggleFull);
+  if(!document.fullscreenEnabled){fullBtn.style.display='none'}
+
+  function toggleTheme(){
+    var root=document.documentElement;
+    var isDark=root.dataset.theme?root.dataset.theme==='dark':window.matchMedia('(prefers-color-scheme: dark)').matches;
+    root.dataset.theme=isDark?'light':'dark';
+  }
+  document.getElementById('theme').addEventListener('click',toggleTheme);
+
+  go(0);
+})();
+</script>
+</body>
+</html>
